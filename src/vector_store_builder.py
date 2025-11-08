@@ -1,5 +1,5 @@
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
 import streamlit as st
 import os
 
@@ -23,3 +23,24 @@ def create_and_save_vector_store(chunks):
     except Exception as e:
         st.error(f"Lỗi khi tạo hoặc lưu vector store: {e}")
         return False
+    
+def load_vector_store():
+    """
+    Load lại vector store đã lưu trong VECTOR_STORE_DIR.
+    Dùng hàm này để truy vấn.
+    """
+    if not os.path.exists(VECTOR_STORE_DIR):
+        st.error("Chưa tìm thấy vector store. Hãy chạy app.py để tạo vector store trước.")
+        return None
+
+    try:
+        embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        vector_store = FAISS.load_local(
+            VECTOR_STORE_DIR,
+            embeddings,
+            allow_dangerous_deserialization=True,
+        )
+        return vector_store
+    except Exception as e:
+        st.error(f"Lỗi khi load vector store: {e}")
+        return None
