@@ -1,21 +1,25 @@
+# src/rag_qa.py
+
 from typing import Dict, Any, List
 
 import os
 from dotenv import load_dotenv
 import streamlit as st
 
-from langchain_openai import ChatOpenAI
-from langchain_core.documents import Document  # cài từ langchain-core
+from langchain_groq import ChatGroq
+from langchain_core.documents import Document
+
 from src.vector_store_builder import load_vector_store
 
-load_dotenv()  # đọc .env
+# đọc .env (GROQ_API_KEY)
+load_dotenv()
 
 
 def build_rag_pipeline() -> Dict[str, Any] | None:
     """
     Tạo pipeline RAG đơn giản:
     - Load vector store (FAISS) từ phần thành viên 1
-    - Tạo LLM (ChatOpenAI)
+    - Tạo LLM dùng Groq (mixtral hoặc llama)
     Trả về dict: {"vector_store": ..., "llm": ...}
     """
     vector_store = load_vector_store()
@@ -23,18 +27,18 @@ def build_rag_pipeline() -> Dict[str, Any] | None:
         st.error("Không load được vector store. Hãy chạy app.py để tạo vector store trước.")
         return None
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        st.error("Thiếu OPENAI_API_KEY trong file .env")
+        st.error("Thiếu GROQ_API_KEY trong file .env")
         return None
 
-    base_url = os.getenv("OPENAI_BASE_URL", None)
-
-    llm = ChatOpenAI(
-        model="gpt-4o-mini",   # gà muốn so sánh model thì sửa tên ở đây
+    # Một số model Groq hay dùng:
+    # - "mixtral-8x7b-32768"  (mạnh)
+    # - "llama-3.1-8b-instant" (nhanh, rẻ)
+    llm = ChatGroq(
+        model="llama-3.1-8b-instant",
         temperature=0.2,
-        api_key=api_key,
-        base_url=base_url,
+        groq_api_key=api_key,
     )
 
     return {"vector_store": vector_store, "llm": llm}
@@ -71,20 +75,20 @@ def ask_question(pipeline: Dict[str, Any], question: str) -> Dict[str, Any]:
     Thực hiện:
     1. similarity_search trên vector store để lấy các đoạn liên quan
     2. Build prompt từ context + câu hỏi
-    3. Gọi LLM để sinh câu trả lời
+    3. Gọi Groq để sinh câu trả lời
 
     Trả về:
     - answer: str
     - sources: list[Document]
     """
     vector_store = pipeline["vector_store"]
-    llm: ChatOpenAI = pipeline["llm"]
+    llm: ChatGroq = pipeline["llm"]
 
-    # Lấy top-k đoạn liên quan (vector_store tự embed query giùm mình)
+    # Lấy top-k đoạn liên quan dựa trên vector store
     docs: List[Document] = vector_store.similarity_search(question, k=5)
 
     prompt = _build_prompt(question, docs)
-    response = llm.invoke(prompt)   # .invoke trả về ChatMessage
+    response = llm.invoke(prompt)   # AIMessage
     answer = response.content
 
     return {

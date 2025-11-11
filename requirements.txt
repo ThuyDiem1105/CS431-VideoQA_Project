@@ -1,7 +1,9 @@
-streamlit
-moviepy
-openai_whisper
-langchain
-faiss-cpu
-sentence-transformers
-python-dotenv
+streamlit 
+moviepy 
+openai-whisper 
+langchain-core 
+langchain-community 
+faiss-cpu 
+sentence-transformers 
+python-dotenv 
+langchain-groq

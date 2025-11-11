@@ -3,6 +3,7 @@ import whisper
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import streamlit as st
 
+
 def clean_transcript(text: str) -> str:
     """
     Làm sạch nhẹ transcript sau khi Whisper phiên âm:
@@ -48,12 +49,18 @@ def clean_transcript(text: str) -> str:
 
     return text
 
+
 def transcribe_audio(audio_path):
-    #phiên âm âm thanh bằng Whisper
+    # phiên âm âm thanh bằng Whisper
     try:
-        # Tải mô hình 'base' (nhanh, cân bằng)
+        st.info(f"Đang phiên âm file: {audio_path}")
+        # model nhỏ hơn cho nhanh, vẫn khá chính xác
         model = whisper.load_model("small")
-        result = model.transcribe(audio_path, fp16=False, language='vi') # ép tiếng Việt, nhưng vẫn giữ các từ tiếng Anh
+        result = model.transcribe(
+            audio_path,
+            fp16=False,
+            language="vi",   # ép tiếng Việt, vẫn giữ thuật ngữ tiếng Anh
+        )
         raw_text = result["text"]
         cleaned_text = clean_transcript(raw_text)
         return cleaned_text
@@ -61,16 +68,17 @@ def transcribe_audio(audio_path):
         st.error(f"Lỗi khi phiên âm âm thanh: {e}")
         return None
 
+
 def chunk_text(transcript):
     # chia nhỏ văn bản thành các đoạn
     if not transcript:
         st.error("Không có văn bản để chia nhỏ.")
         return []
-    
+
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
-        separators=["\n\n", "\n", " ", ""]
+        separators=["\n\n", "\n", " ", ""],
     )
 
     chunks = text_splitter.split_text(transcript)
