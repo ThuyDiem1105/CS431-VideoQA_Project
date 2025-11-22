@@ -1,8 +1,6 @@
-# src/rag_qa.py
-
 from typing import Dict, Any, List
-
 import os
+
 from dotenv import load_dotenv
 import streamlit as st
 
@@ -14,11 +12,18 @@ from src.vector_store_builder import load_vector_store
 # đọc .env (GROQ_API_KEY)
 load_dotenv()
 
+# ====== DANH SÁCH MODEL CHO UI ======
+MODEL_OPTIONS: Dict[str, str] = {
+    "Llama 3.1 8B (instant - nhanh, rẻ)": "llama-3.1-8b-instant",
+    "Llama 3.3 70B (versatile - mạnh)": "llama-3.3-70b-versatile",
+    "GPT OSS 20B (OpenAI)": "openai/gpt-oss-20b",
+}
 
-def build_rag_pipeline() -> Dict[str, Any] | None:
+
+def build_rag_pipeline(model_id: str) -> Dict[str, Any] | None:
     """
     Tạo pipeline RAG đơn giản:
-    - Load vector store (FAISS) từ phần thành viên 1
+    - Load vector store (FAISS)
     - Tạo LLM dùng Groq (mixtral hoặc llama)
     Trả về dict: {"vector_store": ..., "llm": ...}
     """
@@ -32,11 +37,8 @@ def build_rag_pipeline() -> Dict[str, Any] | None:
         st.error("Thiếu GROQ_API_KEY trong file .env")
         return None
 
-    # Một số model Groq hay dùng:
-    # - "mixtral-8x7b-32768"  (mạnh)
-    # - "llama-3.1-8b-instant" (nhanh, rẻ)
     llm = ChatGroq(
-        model="llama-3.1-8b-instant",
+        model=model_id,
         temperature=0.2,
         groq_api_key=api_key,
     )
